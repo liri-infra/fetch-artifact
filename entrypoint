@@ -81,7 +81,7 @@ def main():
                     if artifact['name'] == artifact_name:
                         filename = artifact['name'] + '.zip'
                         if gh.download_artifact(artifact['archive_download_url'], filename):
-                            with ZipFile(filename, 'rb') as z:
+                            with ZipFile(filename, 'r') as z:
                                 z.extractall(extract_path)
 
 
