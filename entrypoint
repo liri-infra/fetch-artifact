@@ -44,12 +44,27 @@ class GitHub(object):
 
 def main():
     github_actor = os.environ['GITHUB_ACTOR']
-    github_token = os.environ['GITHUB_TOKEN']
+    github_token = os.environ.get('INPUT_GITHUB_TOKEN', os.environ.get('GITHUB_TOKEN'))
+
+    for key in ('INPUT_REPOSITORY', 'INPUT_WORKFLOW_PATH', 'INPUT_ARTIFACT_NAME', 'INPUT_EXTRACT_TO'):
+        if key not in os.environ:
+            raise SystemExit(f'Missing environment variable {key}')
+
     repository = os.environ['INPUT_REPOSITORY']
-    owner, repo = repository.split('/')
     workflow_path = os.environ['INPUT_WORKFLOW_PATH']
     artifact_name = os.environ['INPUT_ARTIFACT_NAME']
-    extract_path = os.environ['EXTRACT_TO']
+    extract_path = os.environ['INPUT_EXTRACT_TO']
+
+    if not repository:
+        raise SystemExit('Empty "repository"')
+    if not workflow_path:
+        raise SystemExit('Empty "workflow_path"')
+    if not artifact_name:
+        raise SystemExit('Empty "artifact_name"')
+    if not extract_path:
+        raise SystemExit('Empty "extract_to"')
+
+    owner, repo = repository.split('/')
 
     gh = GitHub(github_actor, github_token)
 
