@@ -83,6 +83,8 @@ def main():
                         if gh.download_artifact(artifact['archive_download_url'], filename):
                             with ZipFile(filename, 'r') as z:
                                 z.extractall(extract_path)
+                            return True
+                        return False
 
 
 if __name__ == '__main__':
