@@ -19,26 +19,32 @@ class GitHub(object):
 
     def workflows(self, owner, repo):
         url = self.url + f'/repos/{owner}/{repo}/actions/workflows'
-        return requests.get(url, auth=(self.username, self.password)).json()
+        r = requests.get(url, auth=(self.username, self.password)).json() or {}
+        return r.get('workflows', [])
 
     def runs(self, owner, repo, workflow_id):
         url = self.url + f'/repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs'
-        return requests.get(url, auth=(self.username, self.password)).json()
+        r = requests.get(url, auth=(self.username, self.password)).json() or {}
+        return r.get('workflow_runs', [])
 
-    def download_artifact(self, url, filename):
-        r = requests.get(url, auth=(self.username, self.password)).json()
+    def artifacts(self, url):
+        artifacts = []
+        r = requests.get(url, auth=(self.username, self.password)).json() or {}
         for artifact in r.get('artifacts', []):
             if artifact['expired']:
                 continue
-            response = requests.get(artifact['archive_download_url'], stream=True, auth=(self.username, self.password))
-            if response.status_code == 200:
-                size = artifact['size_in_bytes']
-                print(f'Downloading {filename} ({size} bytes)')
-                with open(filename, 'wb') as f:
-                    for chunk in response.iter_content(chunk_size=8192):
-                        if chunk:
-                            f.write(chunk)
-                return True
+            artifacts.append(artifact)
+        return artifacts
+
+    def download_artifact(self, url, filename):
+        response = requests.get(url, stream=True, auth=(self.username, self.password))
+        if response.status_code == 200:
+            print(f'Downloading {filename}...')
+            with open(filename, 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+            return True
         return False
 
 
@@ -68,17 +74,15 @@ def main():
 
     gh = GitHub(github_actor, github_token)
 
-    result = gh.workflows(owner, repo)
-    for workflow in result.get('workflows', []):
+    for workflow in gh.workflows(owner, repo):
         if workflow['path'] == workflow_path:
-            runs = gh.runs(owner, repo, workflow['id'])
-            if runs['total_count'] > 0:
-                for run in runs['workflow_runs']:
-                    if run['name'] == artifact_name:
-                        filename = run['name'] + '.zip'
-                        if gh.download_artifact(run['artifact_url'], filename):
+            for run in gh.runs(owner, repo, workflow['id']):
+                for artifact in gh.artifacts(run['artifact_url']):
+                    if artifact['name'] == artifact_name:
+                        filename = artifact['name'] + '.zip'
+                        if gh.download_artifact(artifact['archive_download_url'], filename):
                             with ZipFile(filename, 'rb') as z:
-                              z.extractall(extract_path)
+                                z.extractall(extract_path)
 
 
 if __name__ == '__main__':
