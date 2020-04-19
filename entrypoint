@@ -77,7 +77,7 @@ def main():
     for workflow in gh.workflows(owner, repo):
         if workflow['path'] == workflow_path:
             for run in gh.runs(owner, repo, workflow['id']):
-                for artifact in gh.artifacts(run['artifact_url']):
+                for artifact in gh.artifacts(run['artifacts_url']):
                     if artifact['name'] == artifact_name:
                         filename = artifact['name'] + '.zip'
                         if gh.download_artifact(artifact['archive_download_url'], filename):
