@@ -1,0 +1,70 @@
+#!/usr/bin/env python3
+
+# SPDX-FileCopyrightText: 2020 Pier Luigi Fiorini <pierluigi.fiorini@liri.io>
+#
+# SPDX-License-Identifier: MIT
+
+from zipfile import ZipFile
+
+import os
+import requests
+
+
+class GitHub(object):
+    url = 'https://api.github.com'
+
+    def __init__(self, username, password):
+        self.username = username
+        self.password = password
+
+    def workflows(self, owner, repo):
+        url = self.url + f'/repos/{owner}/{repo}/actions/workflows'
+        return requests.get(url, auth=(self.username, self.password)).json()
+
+    def runs(self, owner, repo, workflow_id):
+        url = self.url + f'/repos/{owner}/{repo}/actions/workflows/{workflow_id}/runs'
+        return requests.get(url, auth=(self.username, self.password)).json()
+
+    def download_artifact(self, url, filename):
+        r = requests.get(url, auth=(self.username, self.password)).json()
+        for artifact in r.get('artifacts', []):
+            if artifact['expired']:
+                continue
+            response = requests.get(artifact['archive_download_url'], stream=True, auth=(self.username, self.password))
+            if response.status_code == 200:
+                size = artifact['size_in_bytes']
+                print(f'Downloading {filename} ({size} bytes)')
+                with open(filename, 'wb') as f:
+                    for chunk in response.iter_content(chunk_size=8192):
+                        if chunk:
+                            f.write(chunk)
+                return True
+        return False
+
+
+def main():
+    github_actor = os.environ['GITHUB_ACTOR']
+    github_token = os.environ['GITHUB_TOKEN']
+    repository = os.environ['INPUT_REPOSITORY']
+    owner, repo = repository.split('/')
+    workflow_path = os.environ['INPUT_WORKFLOW_PATH']
+    artifact_name = os.environ['INPUT_ARTIFACT_NAME']
+    extract_path = os.environ['EXTRACT_TO']
+
+    gh = GitHub(github_actor, github_token)
+
+    result = gh.workflows(owner, repo)
+    for workflow in result.get('workflows', []):
+        if workflow['path'] == workflow_path:
+            runs = gh.runs(owner, repo, workflow['id'])
+            if runs['total_count'] > 0:
+                for run in runs['workflow_runs']:
+                    if run['name'] == artifact_name:
+                        filename = run['name'] + '.zip'
+                        if gh.download_artifact(run['artifact_url'], filename):
+                            with ZipFile(filename, 'rb') as z:
+                              z.extractall(extract_path)
+
+
+if __name__ == '__main__':
+    main()

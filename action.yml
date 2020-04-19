@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: 2020 Pier Luigi Fiorini <pierluigi.fiorini@liri.io>
+#
+# SPDX-License-Identifier: CC0-1.0
+
+name: fetch-artifact
+description: Fetch and extract an artifact
+author: plfiorini
+
+branding:
+  icon: download
+  color: blue
+
+runs:
+  using: docker
+  image: Dockerfile
+
+inputs:
+  github_token:
+    description: 'GitHub token'
+    required: true
+    default: ${{ github.token }}
+  repository:
+    description: 'Repository name with owner (like actions/checkout)'
+    required: true
+    default: ${{ github.repository }}
+  workflow_path:
+    description: 'Path to the workflow file, used to identify the workflow'
+    required: true
+  artifact_name:
+    description: 'Name of the artifact'
+    required: true
+  extract_to:
+    description: 'Path where the artifact is extracted, defaults to the current directory'
+    required: true
+    default: .
