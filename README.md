@@ -28,4 +28,5 @@ This is the step you need to add to your job:
     workflow_path: .github/workflows/build.yml
     artifact_name: artifacts
     extract_to: /tmp
+    save_as: foobar.zip
 ```

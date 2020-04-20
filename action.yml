@@ -29,6 +29,8 @@ inputs:
   artifact_name:
     description: 'Name of the artifact'
     required: true
+  save_as:
+    description: 'Alternative file name to give to the downloaded artifact'
   extract_to:
     description: 'Path where the artifact is extracted, defaults to the current directory'
     required: true

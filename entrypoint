@@ -60,6 +60,7 @@ def main():
     workflow_path = os.environ['INPUT_WORKFLOW_PATH']
     artifact_name = os.environ['INPUT_ARTIFACT_NAME']
     extract_path = os.environ['INPUT_EXTRACT_TO']
+    save_as = os.environ.get('INPUT_SAVE_AS')
 
     if not repository:
         raise SystemExit('Empty "repository"')
@@ -69,6 +70,8 @@ def main():
         raise SystemExit('Empty "artifact_name"')
     if not extract_path:
         raise SystemExit('Empty "extract_to"')
+    if save_as and os.path.isabs(save_as):
+        raise SystemExit('Please provide a file name, not an absolute path in "save_as"')
 
     owner, repo = repository.split('/')
 
@@ -83,6 +86,8 @@ def main():
                         if gh.download_artifact(artifact['archive_download_url'], filename):
                             with ZipFile(filename, 'r') as z:
                                 z.extractall(extract_path)
+                            if save_as:
+                                os.rename(filename, save_as)
                             return True
                         return False
 
