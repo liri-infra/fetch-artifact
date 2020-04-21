@@ -32,6 +32,7 @@ class GitHub(object):
         r = requests.get(url, auth=(self.username, self.password)).json() or {}
         for artifact in r.get('artifacts', []):
             if artifact['expired']:
+                print('Ignoring expired artifact #{}'.format(artifact['id']))
                 continue
             artifacts.append(artifact)
         return artifacts
