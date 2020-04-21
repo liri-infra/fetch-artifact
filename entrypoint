@@ -93,6 +93,7 @@ def main():
                             return True
                         return False
 
+    print(f'Unable to find {artifact_name}', file=sys.stderr)
     return False
 
 
